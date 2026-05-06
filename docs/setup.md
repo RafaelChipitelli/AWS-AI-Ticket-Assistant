@@ -13,7 +13,7 @@ npm install
 npm run dev
 ```
 
-Backend runs on `http://localhost:3001`.
+Backend runs on `http://localhost:4000`.
 
 ## Frontend
 

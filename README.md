@@ -2,13 +2,14 @@
 
 A full-stack cloud support ticket assistant designed for a cloud support/MSP company.
 
-Phase 1 runs completely locally:
+The current version runs completely locally:
 
 - React + TypeScript + Vite frontend
 - Tailwind CSS styling
 - Node.js + TypeScript + Express backend
 - In-memory mock database
 - Mock AI analysis service
+- Axios frontend API client
 
 Future phases will add AWS Lambda, API Gateway, DynamoDB, CloudWatch, IAM, Terraform, and a real AI provider such as Amazon Bedrock or OpenAI.
 
@@ -65,7 +66,7 @@ npm run dev
 Default URLs:
 
 - Frontend: `http://localhost:5173`
-- Backend: `http://localhost:3001`
+- Backend: `http://localhost:4000`
 
 ## Example ticket
 

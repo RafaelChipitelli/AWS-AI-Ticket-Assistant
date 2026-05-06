@@ -1,35 +1,47 @@
+import axios, { AxiosError } from "axios";
 import type { CreateTicketPayload, Ticket } from "../types/ticket";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers
-    },
-    ...options
-  });
+const ticketsClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json"
+  }
+});
 
-  if (!response.ok) {
-    const errorBody = (await response.json().catch(() => null)) as { error?: string } | null;
-    throw new Error(errorBody?.error ?? "API request failed.");
+function toApiError(error: unknown): Error {
+  if (error instanceof AxiosError) {
+    const message = (error.response?.data as { error?: string } | undefined)?.error;
+    return new Error(message ?? "API request failed.");
   }
 
-  return response.json() as Promise<T>;
+  return error instanceof Error ? error : new Error("API request failed.");
 }
 
-export function createTicket(payload: CreateTicketPayload): Promise<Ticket> {
-  return request<Ticket>("/tickets", {
-    method: "POST",
-    body: JSON.stringify(payload)
-  });
+export async function createTicket(payload: CreateTicketPayload): Promise<Ticket> {
+  try {
+    const response = await ticketsClient.post<Ticket>("/tickets", payload);
+    return response.data;
+  } catch (error) {
+    throw toApiError(error);
+  }
 }
 
-export function listTickets(): Promise<Ticket[]> {
-  return request<Ticket[]>("/tickets");
+export async function listTickets(): Promise<Ticket[]> {
+  try {
+    const response = await ticketsClient.get<Ticket[]>("/tickets");
+    return response.data;
+  } catch (error) {
+    throw toApiError(error);
+  }
 }
 
-export function getTicket(id: string): Promise<Ticket> {
-  return request<Ticket>(`/tickets/${id}`);
+export async function getTicket(id: string): Promise<Ticket> {
+  try {
+    const response = await ticketsClient.get<Ticket>(`/tickets/${id}`);
+    return response.data;
+  } catch (error) {
+    throw toApiError(error);
+  }
 }
