@@ -1,12 +1,20 @@
 # Architecture
 
-## Phase 1: Local architecture
+## Current local architecture
 
 ```text
 React Frontend → Express Backend → In-memory Mock Database → Mock AI Service
 ```
 
-The local app is intentionally structured to match the future serverless architecture. Backend code is split into handlers, services, types, and utilities so future Lambda handlers can reuse the same domain logic.
+The local app is intentionally structured to match the future serverless architecture. Backend code is split into Express handlers, Lambda handlers, services, types, and utilities so the same domain logic can run locally and later in AWS.
+
+## Phase 3: Lambda-ready backend
+
+```text
+API Gateway Event → Lambda Handler → Ticket Service → Mock Database → Mock AI Service
+```
+
+Lambda-compatible handlers live in `backend/src/lambda/` and return API Gateway proxy responses. The existing Express server in `backend/src/local/server.ts` remains available for local development.
 
 ## Future target architecture
 

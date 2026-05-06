@@ -7,11 +7,14 @@ The current version runs completely locally:
 - React + TypeScript + Vite frontend
 - Tailwind CSS styling
 - Node.js + TypeScript + Express backend
+- Lambda-compatible backend handlers
 - In-memory mock database
 - Mock AI analysis service
 - Axios frontend API client
 
 Future phases will add AWS Lambda, API Gateway, DynamoDB, CloudWatch, IAM, Terraform, and a real AI provider such as Amazon Bedrock or OpenAI.
+
+The backend is now structured so local Express handlers and future AWS Lambda handlers reuse the same ticket service logic.
 
 ## Local architecture
 
@@ -36,6 +39,18 @@ Frontend displays ticket result
 | POST | `/tickets` | Creates a ticket and returns mock AI analysis |
 | GET | `/tickets` | Lists all tickets |
 | GET | `/tickets/:id` | Returns one ticket by ID |
+
+## Lambda-ready handlers
+
+The local Express API remains the primary development server, but the backend now also includes API Gateway-compatible Lambda handlers:
+
+```text
+backend/src/lambda/createTicketLambda.ts
+backend/src/lambda/getTicketLambda.ts
+backend/src/lambda/listTicketsLambda.ts
+```
+
+These handlers reuse the same ticket service, validation, mock database, and mock AI service as the local Express API.
 
 ## Quick start
 

@@ -42,15 +42,15 @@ export default function App() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-6 px-6 py-8 lg:grid-cols-[420px_1fr]">
-        <div className="space-y-6">
-          <TicketForm onCreate={handleCreateTicket} />
-          <TicketList tickets={tickets} selectedTicketId={selectedTicket?.id} onSelectTicket={setSelectedTicket} />
-        </div>
-
+      <section className="mx-auto grid max-w-7xl gap-6 px-6 py-8 lg:grid-cols-[1fr_420px]">
         <div className="space-y-4">
           {loadError && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{loadError}</p>}
           <TicketResult ticket={selectedTicket} />
+        </div>
+
+        <div className="space-y-6">
+          <TicketForm onCreate={handleCreateTicket} />
+          <TicketList tickets={tickets} selectedTicketId={selectedTicket?.id} onSelectTicket={setSelectedTicket} />
         </div>
       </section>
     </main>

@@ -15,6 +15,14 @@ npm run dev
 
 Backend runs on `http://localhost:4000`.
 
+The backend also includes Lambda-compatible handlers in `backend/src/lambda/`. These are compiled with the backend build and will be used by API Gateway in a later AWS deployment phase.
+
+```text
+backend/src/lambda/createTicketLambda.ts
+backend/src/lambda/getTicketLambda.ts
+backend/src/lambda/listTicketsLambda.ts
+```
+
 ## Frontend
 
 ```bash
