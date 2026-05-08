@@ -36,3 +36,13 @@ Frontend runs on `http://localhost:5173`.
 ## Environment files
 
 Copy `.env.example` files if you need custom ports or API URLs.
+
+Backend database settings:
+
+```text
+DATABASE_MODE=local
+TICKETS_TABLE_NAME=Tickets
+AWS_REGION=ap-southeast-2
+```
+
+Use `DATABASE_MODE=local` for normal local development. `DATABASE_MODE=dynamodb` is reserved for AWS/DynamoDB-backed environments and requires AWS credentials plus an existing DynamoDB table.

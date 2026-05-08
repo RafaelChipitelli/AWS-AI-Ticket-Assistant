@@ -16,6 +16,20 @@ API Gateway Event → Lambda Handler → Ticket Service → Mock Database → Mo
 
 Lambda-compatible handlers live in `backend/src/lambda/` and return API Gateway proxy responses. The existing Express server in `backend/src/local/server.ts` remains available for local development.
 
+## Phase 4: Database mode switch
+
+```text
+Ticket Service → Database Service → local in-memory Map
+                            └──→ DynamoDB table
+```
+
+The backend reads `DATABASE_MODE` to decide which database adapter to use:
+
+- `local`: in-memory Map for local development.
+- `dynamodb`: DynamoDB table configured by `TICKETS_TABLE_NAME`.
+
+This lets the local app keep working without AWS credentials while preparing the same service interface for Lambda and DynamoDB.
+
 ## Future target architecture
 
 ```text

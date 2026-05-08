@@ -8,7 +8,7 @@ The current version runs completely locally:
 - Tailwind CSS styling
 - Node.js + TypeScript + Express backend
 - Lambda-compatible backend handlers
-- In-memory mock database
+- Database mode switch: local in-memory storage or DynamoDB
 - Mock AI analysis service
 - Axios frontend API client
 
@@ -51,6 +51,21 @@ backend/src/lambda/listTicketsLambda.ts
 ```
 
 These handlers reuse the same ticket service, validation, mock database, and mock AI service as the local Express API.
+
+## Database modes
+
+The backend supports two database modes through environment variables:
+
+```text
+DATABASE_MODE=local
+TICKETS_TABLE_NAME=Tickets
+AWS_REGION=ap-southeast-2
+```
+
+- `local`: uses in-memory storage for local development.
+- `dynamodb`: uses DynamoDB through `@aws-sdk/client-dynamodb` and `@aws-sdk/lib-dynamodb`.
+
+Local mode is the default and does not require AWS credentials.
 
 ## Quick start
 
