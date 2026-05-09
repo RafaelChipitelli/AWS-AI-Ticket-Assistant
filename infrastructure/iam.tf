@@ -54,6 +54,15 @@ data "aws_iam_policy_document" "lambda_permissions" {
 
     resources = ["${aws_dynamodb_table.tickets.arn}/index/userId-createdAt-index"]
   }
+
+  statement {
+    sid    = "AccessRateLimitsTable"
+    effect = "Allow"
+
+    actions = ["dynamodb:UpdateItem"]
+
+    resources = [aws_dynamodb_table.rate_limits.arn]
+  }
 }
 
 resource "aws_iam_role_policy" "lambda_permissions" {
