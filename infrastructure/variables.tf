@@ -61,7 +61,7 @@ variable "cloudwatch_log_retention_days" {
 variable "cognito_domain_prefix" {
   description = "Unique prefix for the Cognito Hosted UI domain (globally unique across all AWS accounts)."
   type        = string
-  default     = "aws-ai-ticket-assistant-dev"
+  default     = "ticket-assistant-dev"
 }
 
 variable "google_client_id" {
