@@ -1,0 +1,2 @@
+budget_alert_email = "youremail@yourat.com"
+aws_region         = "ap-southeast-2"

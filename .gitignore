@@ -11,3 +11,5 @@ coverage/
 *.tfstate
 *.tfstate.*
 terraform.tfvars
+tfplan
+*.tfplan

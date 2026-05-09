@@ -97,6 +97,7 @@ Default URLs:
 
 - Frontend: `http://localhost:5173`
 - Backend: `http://localhost:4000`
+- AWS API Gateway: `https://ti4jp4h8md.execute-api.ap-southeast-2.amazonaws.com`
 
 ## Example ticket
 
@@ -107,4 +108,67 @@ Default URLs:
   "customerName": "John Smith",
   "customerEmail": "john@example.com"
 }
+```
+
+## Low-cost AWS deployment
+
+The Terraform stack in `infrastructure/` is configured for minimum-cost serverless usage:
+
+- DynamoDB on-demand billing (`PAY_PER_REQUEST`)
+- Lambda at 128 MB memory and 10-second timeout
+- API Gateway HTTP API, not REST API
+- CloudWatch log retention set to 3 days
+- `AI_PROVIDER=mock` to avoid Bedrock/OpenAI costs
+- No VPC, NAT Gateway, load balancer, or provisioned concurrency
+- AWS Budget alert at USD 5/month
+
+> The budget creates alerts, not a hard spending cap. If you receive a budget alert, destroy the stack manually.
+
+### Package Lambda code
+
+```bash
+cd backend
+npm run package
+```
+
+### Deploy infrastructure
+
+```bash
+cd infrastructure
+terraform init
+terraform plan
+terraform apply
+```
+
+### Destroy infrastructure to stop AWS charges
+
+```bash
+cd infrastructure
+terraform destroy
+```
+
+The budget alert email is configured in `infrastructure/terraform.tfvars.example`. Do not commit real secrets or private values to Git.
+
+## Connect frontend to AWS API Gateway
+
+For local frontend development against AWS, create `frontend/.env`:
+
+```text
+VITE_API_BASE_URL=https://ti4jp4h8md.execute-api.ap-southeast-2.amazonaws.com
+```
+
+To switch back to the local Express backend:
+
+```text
+VITE_API_BASE_URL=http://localhost:4000
+```
+
+Restart Vite after changing environment variables.
+
+## Current deployed AWS endpoints
+
+```text
+POST https://ti4jp4h8md.execute-api.ap-southeast-2.amazonaws.com/tickets
+GET  https://ti4jp4h8md.execute-api.ap-southeast-2.amazonaws.com/tickets
+GET  https://ti4jp4h8md.execute-api.ap-southeast-2.amazonaws.com/tickets/{id}
 ```

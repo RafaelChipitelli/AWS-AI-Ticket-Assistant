@@ -51,3 +51,36 @@ Frontend displays ticket result
 ```
 
 CloudWatch will capture Lambda logs for support triage, debugging, and operational visibility.
+
+## Cost controls
+
+The AWS infrastructure is designed for low-cost learning/portfolio usage:
+
+- DynamoDB uses `PAY_PER_REQUEST` billing.
+- Lambda uses 128 MB memory and 10-second timeout.
+- API Gateway uses HTTP API v2.
+- CloudWatch log groups retain logs for 3 days.
+- The deployed backend uses mock AI by default.
+- A monthly AWS Budget alert is configured at USD 5.
+
+The budget is an alerting mechanism, not an automatic hard cap. Destroy unused resources with Terraform to stop charges.
+
+## Current AWS deployment
+
+```text
+React Frontend (local Vite)
+ ↓
+API Gateway: https://exple123.execute-api.ap-southeast-2.amazonaws.com
+ ↓
+Lambda functions
+ ↓
+DynamoDB table: aws-ai-ticket-assistant-dev-tickets
+ ↓
+Mock AI service
+```
+
+Validated endpoints:
+
+- `POST /tickets`
+- `GET /tickets`
+- `GET /tickets/{id}`
