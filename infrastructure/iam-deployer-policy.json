@@ -4,26 +4,7 @@
     {
       "Sid": "S3Frontend",
       "Effect": "Allow",
-      "Action": [
-        "s3:CreateBucket",
-        "s3:DeleteBucket",
-        "s3:PutBucketPolicy",
-        "s3:DeleteBucketPolicy",
-        "s3:PutBucketWebsite",
-        "s3:PutBucketPublicAccessBlock",
-        "s3:GetBucketPublicAccessBlock",
-        "s3:PutBucketOwnershipControls",
-        "s3:GetBucketOwnershipControls",
-        "s3:GetBucketPolicy",
-        "s3:GetBucketWebsite",
-        "s3:GetBucketAcl",
-        "s3:PutBucketAcl",
-        "s3:GetBucketLocation",
-        "s3:ListBucket",
-        "s3:PutObject",
-        "s3:GetObject",
-        "s3:DeleteObject"
-      ],
+      "Action": "s3:*",
       "Resource": [
         "arn:aws:s3:::aws-ai-ticket-assistant-*",
         "arn:aws:s3:::aws-ai-ticket-assistant-*/*"
@@ -32,20 +13,7 @@
     {
       "Sid": "CloudFront",
       "Effect": "Allow",
-      "Action": [
-        "cloudfront:CreateDistribution",
-        "cloudfront:UpdateDistribution",
-        "cloudfront:DeleteDistribution",
-        "cloudfront:GetDistribution",
-        "cloudfront:ListDistributions",
-        "cloudfront:CreateInvalidation",
-        "cloudfront:GetInvalidation",
-        "cloudfront:CreateOriginAccessControl",
-        "cloudfront:GetOriginAccessControl",
-        "cloudfront:DeleteOriginAccessControl",
-        "cloudfront:ListOriginAccessControls",
-        "cloudfront:TagResource"
-      ],
+      "Action": "cloudfront:*",
       "Resource": "*"
     },
     {
@@ -116,6 +84,7 @@
         "iam:DetachRolePolicy",
         "iam:ListAttachedRolePolicies",
         "iam:ListRolePolicies",
+        "iam:GetRolePolicy",
         "iam:TagRole",
         "iam:ListInstanceProfilesForRole"
       ],
@@ -128,11 +97,16 @@
         "logs:CreateLogGroup",
         "logs:DeleteLogGroup",
         "logs:PutRetentionPolicy",
-        "logs:DescribeLogGroups",
         "logs:ListTagsLogGroup",
         "logs:TagLogGroup"
       ],
       "Resource": "arn:aws:logs:*:010928201261:log-group:/aws/lambda/aws-ai-ticket-assistant-*"
+    },
+    {
+      "Sid": "CloudWatchLogsDescribe",
+      "Effect": "Allow",
+      "Action": "logs:DescribeLogGroups",
+      "Resource": "*"
     },
     {
       "Sid": "Budgets",
@@ -141,7 +115,8 @@
         "budgets:CreateBudget",
         "budgets:ModifyBudget",
         "budgets:DeleteBudget",
-        "budgets:ViewBudget"
+        "budgets:ViewBudget",
+        "budgets:ListTagsForResource"
       ],
       "Resource": "*"
     },
