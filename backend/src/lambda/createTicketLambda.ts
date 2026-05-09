@@ -1,13 +1,9 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { createTicket } from "../services/ticketService.js";
 import { errorResponse, noContentResponse, successResponse } from "../utils/lambdaResponse.js";
+import { checkRateLimit } from "../utils/rateLimiter.js";
+import { extractSourceIp, extractUserId } from "../utils/requestContext.js";
 import { validateCreateTicketInput } from "../utils/validation.js";
-
-function extractUserId(event: APIGatewayProxyEvent): string | undefined {
-  // HTTP API v2 payload format with JWT authorizer
-  const ctx = event.requestContext as unknown as { authorizer?: { jwt?: { claims?: { sub?: string } } } };
-  return ctx.authorizer?.jwt?.claims?.sub;
-}
 
 export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   if (event.httpMethod === "OPTIONS") {
@@ -17,6 +13,15 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
   const userId = extractUserId(event);
   if (!userId) {
     return errorResponse("Unauthorized.", 401);
+  }
+
+  const sourceIp = extractSourceIp(event);
+  const rate = await checkRateLimit(`ip#${sourceIp}`);
+  if (!rate.allowed) {
+    console.warn("rate_limit_exceeded", { sourceIp, count: rate.count, limit: rate.limit });
+    return errorResponse("Too many requests.", 429, {
+      "Retry-After": String(rate.retryAfterSeconds)
+    });
   }
 
   console.log("create_ticket_request_started", { requestId: event.requestContext.requestId, userId });

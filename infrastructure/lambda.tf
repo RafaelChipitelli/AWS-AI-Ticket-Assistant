@@ -3,6 +3,7 @@ locals {
     NODE_ENV                            = "production"
     DATABASE_MODE                       = "dynamodb"
     TICKETS_TABLE_NAME                  = aws_dynamodb_table.tickets.name
+    RATE_LIMIT_TABLE_NAME               = aws_dynamodb_table.rate_limits.name
     AI_PROVIDER                         = "mock"
     AWS_NODEJS_CONNECTION_REUSE_ENABLED = "1"
   }

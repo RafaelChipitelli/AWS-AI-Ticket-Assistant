@@ -15,10 +15,14 @@ export function successResponse<T>(data: T, statusCode = 200): APIGatewayProxyRe
   };
 }
 
-export function errorResponse(message: string, statusCode = 400): APIGatewayProxyResult {
+export function errorResponse(
+  message: string,
+  statusCode = 400,
+  extraHeaders: Record<string, string> = {}
+): APIGatewayProxyResult {
   return {
     statusCode,
-    headers: defaultHeaders,
+    headers: { ...defaultHeaders, ...extraHeaders },
     body: JSON.stringify({ error: message })
   };
 }

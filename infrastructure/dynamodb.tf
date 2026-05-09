@@ -29,3 +29,19 @@ resource "aws_dynamodb_table" "tickets" {
     enabled = false
   }
 }
+
+resource "aws_dynamodb_table" "rate_limits" {
+  name         = "${local.project_name}-${var.environment}-rate-limits"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "key"
+
+  attribute {
+    name = "key"
+    type = "S"
+  }
+
+  ttl {
+    attribute_name = "expiresAt"
+    enabled        = true
+  }
+}
