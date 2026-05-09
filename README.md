@@ -91,7 +91,10 @@ flowchart TB
 - **Serverless backend** — Node.js Lambdas behind an HTTP API Gateway
 - **Pay-per-request DynamoDB** — no provisioned capacity, no idle cost
 - **Hardened inputs** — Zod schemas with strict mode, length limits, and Unicode normalization
-- **Rate limiting** — API Gateway throttling (10 req/s sustained, 20 burst) protects against abuse
+- **In-memory token storage** — JWT never persisted to disk; XSS cannot harvest tokens at rest
+- **CSP and security headers** — HSTS, X-Frame-Options DENY, Permissions-Policy, full CSP
+- **Per-IP rate limiting** — DynamoDB atomic counters cap each IP at 60 req/min
+- **PII-safe logs** — IPs hashed, user content redacted, errors sanitized before CloudWatch
 - **Mock AI triage** — pluggable interface ready for Amazon Bedrock or OpenAI
 - **Cost guardrails** — AWS Budget alerts at USD 5/month
 - **Infrastructure as Code** — fully reproducible with Terraform
@@ -128,21 +131,28 @@ A budget alert at USD 5/month is configured to email if costs ever exceed the th
 
 ## Security
 
-Defense-in-depth applied across the stack:
+Defense-in-depth applied across the stack. Each layer is independent — an
+attacker has to defeat all of them to achieve impact.
 
-| Layer            | Protection                                                                |
-| ---------------- | ------------------------------------------------------------------------- |
-| Authentication   | Cognito User Pool with Google OAuth — no custom credential handling       |
-| Authorization    | JWT authorizer on every API route; Lambdas re-verify user ownership       |
-| Input validation | Zod schemas (strict mode) reject extra fields and enforce length limits   |
-| Unicode safety   | NFC normalization to defeat homoglyph and invisible-character attacks     |
-| Rate limiting    | API Gateway throttling at 10 req/s sustained, 20 req/s burst              |
-| Data isolation   | DynamoDB queries scoped by `userId` from JWT — users cannot read others'  |
-| Storage          | S3 bucket private; only CloudFront via Origin Access Control reads it     |
-| Transport        | HTTPS-only via CloudFront, with HSTS-friendly redirect from HTTP          |
-| IAM              | Least-privilege Lambda execution role; deployer user scoped by ARN prefix |
-| Secrets          | OAuth secrets and `.tfvars` excluded from Git; never logged               |
-| CORS             | API Gateway allows only the deployed CloudFront origin and `localhost`    |
+| Layer            | Protection                                                                                  |
+| ---------------- | ------------------------------------------------------------------------------------------- |
+| Authentication   | Cognito User Pool with Google OAuth — no custom credential handling                         |
+| Authorization    | JWT authorizer on every API route; Lambdas re-verify user ownership on each call            |
+| Token storage    | Tokens kept **in-memory only** — never written to localStorage, sessionStorage, or cookies  |
+| Session recovery | Cognito HttpOnly session cookie enables silent re-auth on reload without persisting tokens  |
+| Browser headers  | CSP, HSTS (1y + preload), X-Frame-Options DENY, X-Content-Type-Options, Permissions-Policy  |
+| Content Security | CSP locks down script/style/connect sources to `self` + scoped AWS regional domains         |
+| Input validation | Zod schemas (strict mode) reject extra fields and enforce length limits                     |
+| Unicode safety   | NFC normalization to defeat homoglyph and invisible-character attacks                       |
+| Rate limiting    | Per-IP via DynamoDB atomic counters (60 req/min) — single user cannot DoS others            |
+| API throttling   | API Gateway global cap at 10 req/s sustained, 20 burst as a backstop                        |
+| Data isolation   | DynamoDB queries scoped by `userId` from JWT — users cannot read others' tickets            |
+| Storage          | S3 bucket private; only CloudFront via Origin Access Control reads it                       |
+| Transport        | HTTPS-only via CloudFront, HSTS preload-eligible                                            |
+| IAM              | Least-privilege Lambda execution role; deployer user scoped by ARN prefix                   |
+| Secrets          | OAuth secrets and `.tfvars` excluded from Git; never logged                                 |
+| Log hygiene      | Source IPs hashed (SHA-256), user content reduced to length, error messages PII-scrubbed    |
+| CORS             | API Gateway allows only the deployed CloudFront origin and `localhost`                      |
 
 ## Project Structure
 
