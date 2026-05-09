@@ -90,6 +90,8 @@ flowchart TB
 - **Origin Access Control (OAC)** — S3 bucket is private; only CloudFront can read it
 - **Serverless backend** — Node.js Lambdas behind an HTTP API Gateway
 - **Pay-per-request DynamoDB** — no provisioned capacity, no idle cost
+- **Hardened inputs** — Zod schemas with strict mode, length limits, and Unicode normalization
+- **Rate limiting** — API Gateway throttling (10 req/s sustained, 20 burst) protects against abuse
 - **Mock AI triage** — pluggable interface ready for Amazon Bedrock or OpenAI
 - **Cost guardrails** — AWS Budget alerts at USD 5/month
 - **Infrastructure as Code** — fully reproducible with Terraform
@@ -123,6 +125,24 @@ The stack is engineered for near-zero idle cost. With no traffic, you pay only f
 | **Total**      |                                     | **< $1/month**    |
 
 A budget alert at USD 5/month is configured to email if costs ever exceed the threshold.
+
+## Security
+
+Defense-in-depth applied across the stack:
+
+| Layer            | Protection                                                                |
+| ---------------- | ------------------------------------------------------------------------- |
+| Authentication   | Cognito User Pool with Google OAuth — no custom credential handling       |
+| Authorization    | JWT authorizer on every API route; Lambdas re-verify user ownership       |
+| Input validation | Zod schemas (strict mode) reject extra fields and enforce length limits   |
+| Unicode safety   | NFC normalization to defeat homoglyph and invisible-character attacks     |
+| Rate limiting    | API Gateway throttling at 10 req/s sustained, 20 req/s burst              |
+| Data isolation   | DynamoDB queries scoped by `userId` from JWT — users cannot read others'  |
+| Storage          | S3 bucket private; only CloudFront via Origin Access Control reads it     |
+| Transport        | HTTPS-only via CloudFront, with HSTS-friendly redirect from HTTP          |
+| IAM              | Least-privilege Lambda execution role; deployer user scoped by ARN prefix |
+| Secrets          | OAuth secrets and `.tfvars` excluded from Git; never logged               |
+| CORS             | API Gateway allows only the deployed CloudFront origin and `localhost`    |
 
 ## Project Structure
 
