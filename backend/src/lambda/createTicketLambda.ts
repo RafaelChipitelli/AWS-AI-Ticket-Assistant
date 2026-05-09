@@ -2,6 +2,7 @@ import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { createTicket } from "../services/ticketService.js";
 import { errorResponse, noContentResponse, successResponse } from "../utils/lambdaResponse.js";
 import { checkRateLimit } from "../utils/rateLimiter.js";
+import { hashIp, redactPii } from "../utils/redact.js";
 import { extractSourceIp, extractUserId } from "../utils/requestContext.js";
 import { validateCreateTicketInput } from "../utils/validation.js";
 
@@ -18,7 +19,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
   const sourceIp = extractSourceIp(event);
   const rate = await checkRateLimit(`ip#${sourceIp}`);
   if (!rate.allowed) {
-    console.warn("rate_limit_exceeded", { sourceIp, count: rate.count, limit: rate.limit });
+    console.warn("rate_limit_exceeded", { ipHash: hashIp(sourceIp), count: rate.count, limit: rate.limit });
     return errorResponse("Too many requests.", 429, {
       "Retry-After": String(rate.retryAfterSeconds)
     });
@@ -40,7 +41,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     const input = validateCreateTicketInput(parsedBody);
-    console.log("ai_analysis_started", { title: input.title });
+    console.log("ai_analysis_started", { titleLength: input.title.length });
 
     const ticket = await createTicket(input, userId);
 
@@ -52,7 +53,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     return successResponse(ticket, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to create ticket.";
-    console.error("create_ticket_failed", { message });
+    console.error("create_ticket_failed", { message: redactPii(message) });
     return errorResponse(message, 400);
   }
 }
