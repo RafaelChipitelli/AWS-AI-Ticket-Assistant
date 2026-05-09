@@ -1,4 +1,6 @@
 import { Amplify } from "aws-amplify";
+import { cognitoUserPoolsTokenProvider } from "aws-amplify/auth/cognito";
+import { inMemoryStorage } from "./inMemoryStorage";
 
 Amplify.configure({
   Auth: {
@@ -17,3 +19,5 @@ Amplify.configure({
     }
   }
 });
+
+cognitoUserPoolsTokenProvider.setKeyValueStorage(inMemoryStorage);
