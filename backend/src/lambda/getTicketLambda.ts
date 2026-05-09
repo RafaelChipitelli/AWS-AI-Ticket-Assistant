@@ -2,6 +2,7 @@ import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { findTicket } from "../services/ticketService.js";
 import { errorResponse, noContentResponse, successResponse } from "../utils/lambdaResponse.js";
 import { checkRateLimit } from "../utils/rateLimiter.js";
+import { hashIp, redactPii } from "../utils/redact.js";
 import { extractSourceIp, extractUserId } from "../utils/requestContext.js";
 
 export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
@@ -17,7 +18,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
   const sourceIp = extractSourceIp(event);
   const rate = await checkRateLimit(`ip#${sourceIp}`);
   if (!rate.allowed) {
-    console.warn("rate_limit_exceeded", { sourceIp, count: rate.count, limit: rate.limit });
+    console.warn("rate_limit_exceeded", { ipHash: hashIp(sourceIp), count: rate.count, limit: rate.limit });
     return errorResponse("Too many requests.", 429, {
       "Retry-After": String(rate.retryAfterSeconds)
     });
@@ -44,7 +45,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     return successResponse(ticket);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to get ticket.";
-    console.error("get_ticket_failed", { ticketId, message });
+    console.error("get_ticket_failed", { ticketId, message: redactPii(message) });
     return errorResponse("Internal server error.", 500);
   }
 }
