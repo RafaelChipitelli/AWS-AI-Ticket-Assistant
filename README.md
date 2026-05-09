@@ -1,137 +1,256 @@
+<div align="center">
+
 # AWS AI Ticket Assistant
 
-A full-stack cloud support ticket assistant designed for a cloud support/MSP company.
+A full-stack, serverless cloud support ticket platform built on AWS.
+End-to-end authentication, AI-assisted triage, and pay-per-use infrastructure.
 
-The current version runs completely locally:
+[**Live Demo**](https://d29817j4dymot2.cloudfront.net) · [Report Bug](https://github.com/RafaelChipitelli/AWS-AI-Ticket-Assistant/issues) · [Request Feature](https://github.com/RafaelChipitelli/AWS-AI-Ticket-Assistant/issues)
 
-- React + TypeScript + Vite frontend
-- Tailwind CSS styling
-- Node.js + TypeScript + Express backend
-- Lambda-compatible backend handlers
-- Database mode switch: local in-memory storage or DynamoDB
-- Mock AI analysis service
-- Axios frontend API client
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind-3-06B6D4?logo=tailwindcss&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=nodedotjs&logoColor=white)
+![AWS Lambda](https://img.shields.io/badge/AWS_Lambda-FF9900?logo=awslambda&logoColor=white)
+![DynamoDB](https://img.shields.io/badge/DynamoDB-4053D6?logo=amazondynamodb&logoColor=white)
+![Cognito](https://img.shields.io/badge/Cognito-DD344C?logo=amazoncognito&logoColor=white)
+![CloudFront](https://img.shields.io/badge/CloudFront-8C4FFF?logo=amazoncloudfront&logoColor=white)
+![Terraform](https://img.shields.io/badge/Terraform-7B42BC?logo=terraform&logoColor=white)
 
-Future phases will add AWS Lambda, API Gateway, DynamoDB, CloudWatch, IAM, Terraform, and a real AI provider such as Amazon Bedrock or OpenAI.
+</div>
 
-The backend is now structured so local Express handlers and future AWS Lambda handlers reuse the same ticket service logic.
+---
 
-## Local architecture
+## Overview
 
-```text
-User
- ↓
-React Frontend
- ↓
-Express API
- ↓
-Mock Database
- ↓
-Mock AI Service
- ↓
-Frontend displays ticket result
+A production-ready support ticket system designed for cloud support / MSP teams. Customers sign in with Google, submit support tickets, and receive AI-generated triage analysis. The entire stack is serverless and scoped to a single AWS account, so it costs essentially nothing when idle and scales automatically when used.
+
+This project demonstrates real-world cloud architecture patterns: federated identity, JWT-protected APIs, edge-cached static frontends, per-user data isolation, and infrastructure-as-code with strict IAM least-privilege.
+
+## Architecture
+
+```
+                    ┌──────────────┐
+                    │    Users     │
+                    └──────┬───────┘
+                           │ HTTPS
+                           ▼
+                    ┌──────────────┐         ┌─────────────────┐
+                    │  CloudFront  │────────▶│   Cognito       │
+                    │     CDN      │         │  (Google OAuth) │
+                    └──────┬───────┘         └─────────────────┘
+                           │ Static assets             │ JWT
+                           ▼                           │
+                    ┌──────────────┐                   │
+                    │  S3 Bucket   │                   │
+                    │  (React SPA) │                   │
+                    └──────────────┘                   │
+                                                       │
+                    ┌──────────────┐                   │
+                    │ API Gateway  │◀──────────────────┘
+                    │  (HTTP API)  │   JWT Authorizer
+                    └──────┬───────┘
+                           │
+              ┌────────────┼────────────┐
+              ▼            ▼            ▼
+       ┌──────────┐ ┌──────────┐ ┌──────────┐
+       │  Lambda  │ │  Lambda  │ │  Lambda  │
+       │  Create  │ │   List   │ │   Get    │
+       └─────┬────┘ └─────┬────┘ └─────┬────┘
+             └────────────┼────────────┘
+                          ▼
+                   ┌──────────────┐
+                   │   DynamoDB   │
+                   │ (PAY_PER_REQ)│
+                   └──────────────┘
 ```
 
-## API endpoints
+## Features
 
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| POST | `/tickets` | Creates a ticket and returns mock AI analysis |
-| GET | `/tickets` | Lists all tickets |
-| GET | `/tickets/:id` | Returns one ticket by ID |
+- **Federated authentication** with Amazon Cognito and Google OAuth 2.0
+- **JWT-protected API** — all endpoints require a valid Cognito access token
+- **Per-user data isolation** — each user only sees their own tickets, enforced via DynamoDB GSI
+- **Static frontend at the edge** — React SPA cached globally on CloudFront
+- **Origin Access Control (OAC)** — S3 bucket is private; only CloudFront can read it
+- **Serverless backend** — Node.js Lambdas behind an HTTP API Gateway
+- **Pay-per-request DynamoDB** — no provisioned capacity, no idle cost
+- **Mock AI triage** — pluggable interface ready for Amazon Bedrock or OpenAI
+- **Cost guardrails** — AWS Budget alerts at USD 5/month
+- **Infrastructure as Code** — fully reproducible with Terraform
+- **Least-privilege IAM** — dedicated deployer user with scoped policies
 
-## Lambda-ready handlers
+## Tech Stack
 
-The local Express API remains the primary development server, but the backend now also includes API Gateway-compatible Lambda handlers:
+| Layer            | Technology                                                         |
+| ---------------- | ------------------------------------------------------------------ |
+| Frontend         | React 19, TypeScript, Vite, Tailwind CSS, AWS Amplify Auth         |
+| Backend          | Node.js 20, TypeScript, AWS Lambda, Express (local dev parity)     |
+| Database         | DynamoDB (on-demand) with `userId-createdAt` GSI                   |
+| Auth             | Amazon Cognito User Pool + Google Identity Provider                |
+| API              | API Gateway HTTP API with JWT Authorizer                           |
+| Hosting          | S3 + CloudFront with Origin Access Control                         |
+| IaC              | Terraform 1.6+ with AWS provider 5.x                               |
+| Observability    | CloudWatch Logs (3-day retention)                                  |
 
-```text
-backend/src/lambda/createTicketLambda.ts
-backend/src/lambda/getTicketLambda.ts
-backend/src/lambda/listTicketsLambda.ts
+## Cost
+
+The stack is engineered for near-zero idle cost. With no traffic, you pay only for the Cognito User Pool (free tier covers 50,000 MAU), DynamoDB storage (negligible at small scale), and a Route 53 hosted zone if you add a custom domain.
+
+| Service        | Free tier / cost model              | Idle monthly cost |
+| -------------- | ----------------------------------- | ----------------- |
+| Lambda         | 1M requests + 400k GB-s free        | $0                |
+| API Gateway    | 1M HTTP requests free               | $0                |
+| DynamoDB       | 25 GB storage free, on-demand reads | ~$0               |
+| S3             | First 5 GB free                     | < $0.05           |
+| CloudFront     | 1 TB egress + 10M requests free     | $0                |
+| Cognito        | 50,000 MAUs free                    | $0                |
+| **Total**      |                                     | **< $1/month**    |
+
+A budget alert at USD 5/month is configured to email if costs ever exceed the threshold.
+
+## Project Structure
+
+```
+.
+├── backend/
+│   ├── src/
+│   │   ├── handlers/        # Express handlers (local dev)
+│   │   ├── lambda/          # AWS Lambda handlers (production)
+│   │   ├── services/        # Shared business logic
+│   │   ├── types/           # TypeScript domain models
+│   │   └── utils/           # Validation, response helpers
+│   └── package.json
+├── frontend/
+│   ├── src/
+│   │   ├── api/             # Axios client (with auth interceptor)
+│   │   ├── auth/            # Amplify config + useAuth hook
+│   │   ├── components/      # React components
+│   │   └── types/
+│   └── package.json
+├── infrastructure/
+│   ├── api_gateway.tf       # HTTP API + JWT authorizer
+│   ├── cognito.tf           # User Pool + Google IdP
+│   ├── dynamodb.tf          # Tickets table + GSI
+│   ├── iam.tf               # Lambda execution role
+│   ├── lambda.tf            # Function definitions
+│   ├── s3_cloudfront.tf     # Frontend hosting
+│   └── main.tf              # Provider + budget guardrail
+└── docs/
+    ├── architecture.md
+    └── setup.md
 ```
 
-These handlers reuse the same ticket service, validation, mock database, and mock AI service as the local Express API.
+## API Reference
 
-## Database modes
+All endpoints require an `Authorization: Bearer <id_token>` header. Tickets are scoped to the authenticated user via the `sub` claim.
 
-The backend supports two database modes through environment variables:
+| Method | Endpoint        | Description                                  |
+| ------ | --------------- | -------------------------------------------- |
+| POST   | `/tickets`      | Creates a ticket and returns AI analysis     |
+| GET    | `/tickets`      | Lists tickets owned by the authenticated user|
+| GET    | `/tickets/{id}` | Returns one ticket by ID (ownership checked) |
 
-```text
-DATABASE_MODE=local
-TICKETS_TABLE_NAME=Tickets
-AWS_REGION=ap-southeast-2
-```
-
-- `local`: uses in-memory storage for local development.
-- `dynamodb`: uses DynamoDB through `@aws-sdk/client-dynamodb` and `@aws-sdk/lib-dynamodb`.
-
-Local mode is the default and does not require AWS credentials.
-
-## Quick start
-
-Install dependencies:
-
-```bash
-cd backend
-npm install
-
-cd ../frontend
-npm install
-```
-
-Run backend:
-
-```bash
-cd backend
-npm run dev
-```
-
-Run frontend in another terminal:
-
-```bash
-cd frontend
-npm run dev
-```
-
-Default URLs:
-
-- Frontend: `http://localhost:5173`
-- Backend: `http://localhost:4000`
-- AWS API Gateway: `https://ti4jp4h8md.execute-api.ap-southeast-2.amazonaws.com`
-
-## Example ticket
+### Request example
 
 ```json
+POST /tickets
 {
   "title": "Website is down",
-  "description": "After deploying the new version, the website is returning 502 errors.",
+  "description": "After deploying the new version, the website returns 502 errors.",
   "customerName": "John Smith",
   "customerEmail": "john@example.com"
 }
 ```
 
-## Low-cost AWS deployment
+### Response example
 
-The Terraform stack in `infrastructure/` is configured for minimum-cost serverless usage:
+```json
+{
+  "id": "ticket_a4f...",
+  "userId": "google_109...",
+  "title": "Website is down",
+  "status": "open",
+  "createdAt": "2026-05-09T04:00:00.000Z",
+  "analysis": {
+    "possibleCause": "Misconfigured upstream after deployment",
+    "priority": "high",
+    "nextSteps": ["Roll back deploy", "Check load balancer health"],
+    "suggestedResponse": "We are aware of the issue and investigating..."
+  }
+}
+```
 
-- DynamoDB on-demand billing (`PAY_PER_REQUEST`)
-- Lambda at 128 MB memory and 10-second timeout
-- API Gateway HTTP API, not REST API
-- CloudWatch log retention set to 3 days
-- `AI_PROVIDER=mock` to avoid Bedrock/OpenAI costs
-- No VPC, NAT Gateway, load balancer, or provisioned concurrency
-- AWS Budget alert at USD 5/month
+## Running Locally
 
-> The budget creates alerts, not a hard spending cap. If you receive a budget alert, destroy the stack manually.
+The backend runs in two modes: `local` (in-memory) for offline development and `dynamodb` against a real AWS account.
 
-### Package Lambda code
+### Prerequisites
+
+- Node.js 20+
+- npm
+- (Optional) AWS CLI configured for DynamoDB / Lambda deploy
+
+### Install dependencies
+
+```bash
+cd backend && npm install
+cd ../frontend && npm install
+```
+
+### Run with in-memory backend
+
+```bash
+# Terminal 1
+cd backend
+npm run dev          # http://localhost:4000
+
+# Terminal 2
+cd frontend
+npm run dev          # http://localhost:5173
+```
+
+The local Express server has authentication disabled and uses a placeholder `userId`, so you can iterate without a Cognito setup.
+
+### Run frontend against the deployed AWS API
+
+Create `frontend/.env`:
+
+```bash
+VITE_API_BASE_URL=https://<your-api-id>.execute-api.<region>.amazonaws.com
+VITE_COGNITO_USER_POOL_ID=<region>_XXXXXXXXX
+VITE_COGNITO_CLIENT_ID=<client-id>
+VITE_COGNITO_DOMAIN=<prefix>.auth.<region>.amazoncognito.com
+VITE_APP_URL=http://localhost:5173
+```
+
+## Deployment
+
+### 1. Configure Google OAuth
+
+In [Google Cloud Console](https://console.cloud.google.com), create OAuth 2.0 credentials with these authorized redirect URIs:
+
+- `https://<cognito-domain>.auth.<region>.amazoncognito.com/oauth2/idpresponse`
+- `https://<cloudfront-domain>` (added after first apply)
+
+### 2. Provide Terraform variables
+
+Copy and fill in `infrastructure/terraform.tfvars`:
+
+```hcl
+google_client_id     = "your-client-id.apps.googleusercontent.com"
+google_client_secret = "your-client-secret"
+budget_alert_email   = "you@example.com"
+```
+
+### 3. Package the Lambda bundle
 
 ```bash
 cd backend
-npm run package
+npm run package      # produces dist/lambda.zip
 ```
 
-### Deploy infrastructure
+### 4. Deploy infrastructure
 
 ```bash
 cd infrastructure
@@ -140,35 +259,37 @@ terraform plan
 terraform apply
 ```
 
-### Destroy infrastructure to stop AWS charges
+### 5. Build and upload the frontend
+
+```bash
+cd frontend
+npm run build
+aws s3 sync dist/ s3://$(terraform -chdir=../infrastructure output -raw frontend_bucket_name) --delete
+aws cloudfront create-invalidation \
+  --distribution-id $(terraform -chdir=../infrastructure output -raw cloudfront_distribution_id) \
+  --paths "/*"
+```
+
+### Tear down
 
 ```bash
 cd infrastructure
 terraform destroy
 ```
 
-The budget alert email is configured in `infrastructure/terraform.tfvars.example`. Do not commit real secrets or private values to Git.
+## Roadmap
 
-## Connect frontend to AWS API Gateway
+- [ ] Replace mock AI triage with Amazon Bedrock (Claude or Titan)
+- [ ] Custom domain via Route 53 + ACM certificate
+- [ ] CI/CD with GitHub Actions (build, test, deploy on merge to `main`)
+- [ ] Email notifications via SES on ticket creation
+- [ ] Admin role with cross-user ticket visibility
+- [ ] End-to-end tests with Playwright
 
-For local frontend development against AWS, create `frontend/.env`:
+## License
 
-```text
-VITE_API_BASE_URL=https://ti4jp4h8md.execute-api.ap-southeast-2.amazonaws.com
-```
+This project is licensed under the MIT License.
 
-To switch back to the local Express backend:
+## Author
 
-```text
-VITE_API_BASE_URL=http://localhost:4000
-```
-
-Restart Vite after changing environment variables.
-
-## Current deployed AWS endpoints
-
-```text
-POST https://ti4jp4h8md.execute-api.ap-southeast-2.amazonaws.com/tickets
-GET  https://ti4jp4h8md.execute-api.ap-southeast-2.amazonaws.com/tickets
-GET  https://ti4jp4h8md.execute-api.ap-southeast-2.amazonaws.com/tickets/{id}
-```
+**Rafael Chipitelli** — [GitHub](https://github.com/RafaelChipitelli)
