@@ -57,3 +57,21 @@ variable "cloudwatch_log_retention_days" {
   type        = number
   default     = 3
 }
+
+variable "cognito_domain_prefix" {
+  description = "Unique prefix for the Cognito Hosted UI domain (globally unique across all AWS accounts)."
+  type        = string
+  default     = "aws-ai-ticket-assistant-dev"
+}
+
+variable "google_client_id" {
+  description = "Google OAuth 2.0 Client ID for Cognito social login."
+  type        = string
+  sensitive   = true
+}
+
+variable "google_client_secret" {
+  description = "Google OAuth 2.0 Client Secret for Cognito social login."
+  type        = string
+  sensitive   = true
+}

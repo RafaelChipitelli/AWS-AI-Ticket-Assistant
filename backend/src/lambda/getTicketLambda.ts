@@ -2,15 +2,26 @@ import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { findTicket } from "../services/ticketService.js";
 import { errorResponse, noContentResponse, successResponse } from "../utils/lambdaResponse.js";
 
+function extractUserId(event: APIGatewayProxyEvent): string | undefined {
+  const ctx = event.requestContext as unknown as { authorizer?: { jwt?: { claims?: { sub?: string } } } };
+  return ctx.authorizer?.jwt?.claims?.sub;
+}
+
 export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   if (event.httpMethod === "OPTIONS") {
     return noContentResponse();
   }
 
+  const userId = extractUserId(event);
+  if (!userId) {
+    return errorResponse("Unauthorized.", 401);
+  }
+
   const ticketId = event.pathParameters?.id;
   console.log("get_ticket_request_started", {
     requestId: event.requestContext.requestId,
-    ticketId
+    ticketId,
+    userId
   });
 
   if (!ticketId) {
@@ -18,7 +29,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
   }
 
   try {
-    const ticket = await findTicket(ticketId);
+    const ticket = await findTicket(ticketId, userId);
 
     if (!ticket) {
       return errorResponse("Ticket not found.", 404);

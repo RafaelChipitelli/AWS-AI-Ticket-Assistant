@@ -3,12 +3,23 @@ import { createTicket } from "../services/ticketService.js";
 import { errorResponse, noContentResponse, successResponse } from "../utils/lambdaResponse.js";
 import { validateCreateTicketInput } from "../utils/validation.js";
 
+function extractUserId(event: APIGatewayProxyEvent): string | undefined {
+  // HTTP API v2 payload format with JWT authorizer
+  const ctx = event.requestContext as unknown as { authorizer?: { jwt?: { claims?: { sub?: string } } } };
+  return ctx.authorizer?.jwt?.claims?.sub;
+}
+
 export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   if (event.httpMethod === "OPTIONS") {
     return noContentResponse();
   }
 
-  console.log("create_ticket_request_started", { requestId: event.requestContext.requestId });
+  const userId = extractUserId(event);
+  if (!userId) {
+    return errorResponse("Unauthorized.", 401);
+  }
+
+  console.log("create_ticket_request_started", { requestId: event.requestContext.requestId, userId });
 
   try {
     if (!event.body) {
@@ -26,7 +37,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const input = validateCreateTicketInput(parsedBody);
     console.log("ai_analysis_started", { title: input.title });
 
-    const ticket = await createTicket(input);
+    const ticket = await createTicket(input, userId);
 
     console.log("ticket_created", {
       ticketId: ticket.id,

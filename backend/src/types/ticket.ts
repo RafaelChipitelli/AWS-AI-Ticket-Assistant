@@ -9,6 +9,7 @@ export interface TicketAnalysis {
 
 export interface Ticket {
   id: string;
+  userId: string;
   title: string;
   description: string;
   customerName?: string;

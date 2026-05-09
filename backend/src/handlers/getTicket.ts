@@ -9,7 +9,7 @@ export async function getTicketHandler(req: Request, res: Response): Promise<Res
     return sendError(res, "Ticket ID is required.", 400);
   }
 
-  const ticket = await findTicket(ticketId);
+  const ticket = await findTicket(ticketId, "local-dev-user");
 
   if (!ticket) {
     return sendError(res, "Ticket not found.", 404);
