@@ -5,8 +5,23 @@ resource "aws_apigatewayv2_api" "tickets" {
   cors_configuration {
     allow_headers = ["content-type", "authorization"]
     allow_methods = ["GET", "POST", "OPTIONS"]
-    allow_origins = ["*"]
-    max_age       = 300
+    allow_origins = [
+      "http://localhost:5173",
+      "https://${aws_cloudfront_distribution.frontend.domain_name}"
+    ]
+    max_age = 300
+  }
+}
+
+resource "aws_apigatewayv2_authorizer" "cognito" {
+  api_id           = aws_apigatewayv2_api.tickets.id
+  authorizer_type  = "JWT"
+  identity_sources = ["$request.header.Authorization"]
+  name             = "cognito-jwt-authorizer"
+
+  jwt_configuration {
+    audience = [aws_cognito_user_pool_client.frontend.id]
+    issuer   = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.main.id}"
   }
 }
 
@@ -38,21 +53,27 @@ resource "aws_apigatewayv2_integration" "list_tickets" {
 }
 
 resource "aws_apigatewayv2_route" "create_ticket" {
-  api_id    = aws_apigatewayv2_api.tickets.id
-  route_key = "POST /tickets"
-  target    = "integrations/${aws_apigatewayv2_integration.create_ticket.id}"
+  api_id             = aws_apigatewayv2_api.tickets.id
+  route_key          = "POST /tickets"
+  target             = "integrations/${aws_apigatewayv2_integration.create_ticket.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
 
 resource "aws_apigatewayv2_route" "list_tickets" {
-  api_id    = aws_apigatewayv2_api.tickets.id
-  route_key = "GET /tickets"
-  target    = "integrations/${aws_apigatewayv2_integration.list_tickets.id}"
+  api_id             = aws_apigatewayv2_api.tickets.id
+  route_key          = "GET /tickets"
+  target             = "integrations/${aws_apigatewayv2_integration.list_tickets.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
 
 resource "aws_apigatewayv2_route" "get_ticket" {
-  api_id    = aws_apigatewayv2_api.tickets.id
-  route_key = "GET /tickets/{id}"
-  target    = "integrations/${aws_apigatewayv2_integration.get_ticket.id}"
+  api_id             = aws_apigatewayv2_api.tickets.id
+  route_key          = "GET /tickets/{id}"
+  target             = "integrations/${aws_apigatewayv2_integration.get_ticket.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
 
 resource "aws_lambda_permission" "allow_api_create_ticket" {

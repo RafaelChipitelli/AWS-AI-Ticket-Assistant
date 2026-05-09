@@ -45,6 +45,15 @@ data "aws_iam_policy_document" "lambda_permissions" {
 
     resources = [aws_dynamodb_table.tickets.arn]
   }
+
+  statement {
+    sid    = "QueryTicketsGSI"
+    effect = "Allow"
+
+    actions = ["dynamodb:Query"]
+
+    resources = ["${aws_dynamodb_table.tickets.arn}/index/userId-createdAt-index"]
+  }
 }
 
 resource "aws_iam_role_policy" "lambda_permissions" {

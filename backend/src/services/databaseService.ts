@@ -1,5 +1,5 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import type { Ticket } from "../types/ticket.js";
 
 type DatabaseMode = "local" | "dynamodb";
@@ -54,6 +54,25 @@ export async function getTicketById(id: string): Promise<Ticket | undefined> {
   );
 
   return result.Item as Ticket | undefined;
+}
+
+export async function listTicketsByUser(userId: string): Promise<Ticket[]> {
+  if (!isDynamoDbMode()) {
+    const userTickets = Array.from(tickets.values()).filter((t) => t.userId === userId);
+    return sortTicketsByCreatedAt(userTickets);
+  }
+
+  const result = await dynamoClient.send(
+    new QueryCommand({
+      TableName: tableName,
+      IndexName: "userId-createdAt-index",
+      KeyConditionExpression: "userId = :userId",
+      ExpressionAttributeValues: { ":userId": userId },
+      ScanIndexForward: false
+    })
+  );
+
+  return (result.Items ?? []) as Ticket[];
 }
 
 export async function listTickets(): Promise<Ticket[]> {

@@ -1,14 +1,15 @@
 import { randomUUID } from "node:crypto";
 import { analyzeTicket } from "./aiService.js";
-import { getTicketById, listTickets, saveTicket } from "./databaseService.js";
+import { getTicketById, listTicketsByUser, saveTicket } from "./databaseService.js";
 import type { CreateTicketInput, Ticket } from "../types/ticket.js";
 
-export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
+export async function createTicket(input: CreateTicketInput, userId: string): Promise<Ticket> {
   const now = new Date().toISOString();
   const analysis = await analyzeTicket(input);
 
   const ticket: Ticket = {
     id: `ticket_${randomUUID()}`,
+    userId,
     title: input.title,
     description: input.description,
     customerName: input.customerName,
@@ -22,10 +23,12 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
   return saveTicket(ticket);
 }
 
-export async function findTicket(id: string): Promise<Ticket | undefined> {
-  return getTicketById(id);
+export async function findTicket(id: string, userId: string): Promise<Ticket | undefined> {
+  const ticket = await getTicketById(id);
+  if (!ticket || ticket.userId !== userId) return undefined;
+  return ticket;
 }
 
-export async function findAllTickets(): Promise<Ticket[]> {
-  return listTickets();
+export async function findAllTickets(userId: string): Promise<Ticket[]> {
+  return listTicketsByUser(userId);
 }

@@ -10,6 +10,14 @@ const ticketsClient = axios.create({
   }
 });
 
+export function setAuthToken(token: string | null) {
+  if (token) {
+    ticketsClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  } else {
+    delete ticketsClient.defaults.headers.common["Authorization"];
+  }
+}
+
 function toApiError(error: unknown): Error {
   if (error instanceof AxiosError) {
     const message = (error.response?.data as { error?: string } | undefined)?.error;

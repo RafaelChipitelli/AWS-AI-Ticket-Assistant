@@ -6,7 +6,7 @@ import { validateCreateTicketInput } from "../utils/validation.js";
 export async function createTicketHandler(req: Request, res: Response): Promise<Response> {
   try {
     const input = validateCreateTicketInput(req.body);
-    const ticket = await createTicket(input);
+    const ticket = await createTicket(input, "local-dev-user");
     return sendSuccess(res, ticket, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to create ticket.";
