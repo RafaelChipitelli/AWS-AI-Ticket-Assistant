@@ -30,40 +30,55 @@ This project demonstrates real-world cloud architecture patterns: federated iden
 
 ## Architecture
 
-```
-                    ┌──────────────┐
-                    │    Users     │
-                    └──────┬───────┘
-                           │ HTTPS
-                           ▼
-                    ┌──────────────┐         ┌─────────────────┐
-                    │  CloudFront  │────────▶│   Cognito       │
-                    │     CDN      │         │  (Google OAuth) │
-                    └──────┬───────┘         └─────────────────┘
-                           │ Static assets             │ JWT
-                           ▼                           │
-                    ┌──────────────┐                   │
-                    │  S3 Bucket   │                   │
-                    │  (React SPA) │                   │
-                    └──────────────┘                   │
-                                                       │
-                    ┌──────────────┐                   │
-                    │ API Gateway  │◀──────────────────┘
-                    │  (HTTP API)  │   JWT Authorizer
-                    └──────┬───────┘
-                           │
-              ┌────────────┼────────────┐
-              ▼            ▼            ▼
-       ┌──────────┐ ┌──────────┐ ┌──────────┐
-       │  Lambda  │ │  Lambda  │ │  Lambda  │
-       │  Create  │ │   List   │ │   Get    │
-       └─────┬────┘ └─────┬────┘ └─────┬────┘
-             └────────────┼────────────┘
-                          ▼
-                   ┌──────────────┐
-                   │   DynamoDB   │
-                   │ (PAY_PER_REQ)│
-                   └──────────────┘
+```mermaid
+flowchart TB
+    User([User])
+
+    subgraph Edge["Edge & Auth"]
+        direction LR
+        CF[CloudFront CDN]
+        S3[(S3 Bucket<br/>React SPA)]
+        Cognito[Cognito<br/>Google OAuth]
+        CF -->|Static assets| S3
+        CF -.->|Sign in| Cognito
+    end
+
+    subgraph API["API Layer"]
+        APIGW[API Gateway<br/>HTTP API + JWT]
+        Auth{{JWT Authorizer}}
+        APIGW --> Auth
+    end
+
+    subgraph Compute["Serverless Compute"]
+        direction LR
+        L1[Lambda<br/>Create Ticket]
+        L2[Lambda<br/>List Tickets]
+        L3[Lambda<br/>Get Ticket]
+    end
+
+    DB[(DynamoDB<br/>PAY_PER_REQUEST<br/>userId GSI)]
+
+    User -->|HTTPS| CF
+    User -->|Authenticated requests<br/>Bearer JWT| APIGW
+    Cognito -.->|Validates token| Auth
+    Auth --> L1
+    Auth --> L2
+    Auth --> L3
+    L1 --> DB
+    L2 --> DB
+    L3 --> DB
+
+    classDef aws fill:#FF9900,stroke:#232F3E,color:#fff,stroke-width:2px
+    classDef storage fill:#3F8624,stroke:#232F3E,color:#fff,stroke-width:2px
+    classDef auth fill:#DD344C,stroke:#232F3E,color:#fff,stroke-width:2px
+    classDef edge fill:#8C4FFF,stroke:#232F3E,color:#fff,stroke-width:2px
+    classDef user fill:#1f2937,stroke:#60a5fa,color:#fff,stroke-width:2px
+
+    class L1,L2,L3,APIGW,Auth aws
+    class DB,S3 storage
+    class Cognito auth
+    class CF edge
+    class User user
 ```
 
 ## Features
